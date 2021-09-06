@@ -7,19 +7,19 @@ import { ParametricGeometries } from './threejs-dev/examples/jsm/geometries/Para
 //Variables
 let camera, scene,renderer, controls, clothGeometry, mesh, ball, line;
 
-const MASS = 0.1;
-const restDistance = 25;
-const xSegs = 10;
-const ySegs = 10;
+const MASS = 0.01;
+const restDistance = 10;
+const xSegs = 30;
+const ySegs = 30;
 const diff = new THREE.Vector3();
-const BallSize = 30;
-const ballPosition = new THREE.Vector3( 2, -15, -4 );
+const BallSize = 45;
+const ballPosition = new THREE.Vector3( 2, 150, -4 );
 let back = false;
 let pins = [];
 
 const clothFunction = plane( restDistance * xSegs, restDistance * ySegs );
 
-const GRAVITY = 981 * 1.4;
+const GRAVITY = 981 * 0.4;
 const gravity = new THREE.Vector3( 0, - GRAVITY, 0 ).multiplyScalar( MASS );
 
 const TIMESTEP = 18 / 1000;
@@ -37,7 +37,7 @@ class Particle {
         this.original = new THREE.Vector3();
         this.a = new THREE.Vector3( 0, 0, 0 ); // acceleration
 		this.mass = mass;
-		this.invMass = 1 / mass;
+		this.invMass = .7/ mass;
 		this.tmp = new THREE.Vector3();
 		this.tmp2 = new THREE.Vector3();
 
@@ -105,7 +105,7 @@ class Cloth {
                                     restDistance]);
 
                                     constraints.push([particles[index( u , v )],
-                                    particles[index(u+1, v )],
+                                    particles[index(u + 1, v )],
                                     restDistance]);
                 }
             }
@@ -128,7 +128,7 @@ class Cloth {
 			this.constraints = constraints;
 
             function index( u, v ) {
-                return u + v * ( w + 1 );
+               return u + v * ( w + 1  );
             }
 
             this.index = index;
@@ -138,28 +138,18 @@ class Cloth {
 }
 
 
-
 const cloth = new Cloth( xSegs , ySegs );
 const pinsFormation = [];
 
-//pins = [ 6 ];
 
 
 
-pins = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+//Bottom pin
+//pins = [ 0, 1,2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12 , 13 , 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,26,27,28,29,30];
 
-
-//pins = [ 0 ];
-
-
-//pins = []; // cut the rope ;)
-
-
-//pins = [ 0, cloth.w ]; // classic 2 pins
-
-
-//pins = pinsFormation[ 1 ];
-
+//TOP pin
+pins = [ 930, 931, 932, 933 , 934 ,935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953,
+         954, 955, 956, 957, 958, 959, 960];
 
 
 init();
@@ -182,7 +172,7 @@ function init(){
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+    const directionalLight = new THREE.DirectionalLight( 0xffffff, 3.5 );
     scene.add( directionalLight );
 }
 
@@ -190,12 +180,12 @@ function animate() {
 	requestAnimationFrame( animate );
     
     if(back) {
-        ball.position.z -= 1.5;
+        //ball.position.z -= 3.5;
     } else{
-        ball.position.z += 1.5;
+        //ball.position.z += 3.5;
     }
     
-    if(ball.position.z >= 60) {
+    if(ball.position.z >= 135) {
         back=true;
     }
     if(ball.position.z <= -40) {
@@ -215,8 +205,19 @@ animate();
 
 //Parametric mesh
 function addParamMesh(){
+    const loader = new THREE.TextureLoader();
+	const clothTexture = loader.load( 'texture/net.png' );
+	clothTexture.anisotropy = 16;
+    clothTexture.wrapS = THREE.RepeatWrapping;
+    clothTexture.wrapT = THREE.RepeatWrapping;
+    clothTexture.repeat.set( 8, 8 );
     clothGeometry = new THREE.ParametricGeometry( clothFunction, cloth.w, cloth.h ); //Параметрическая сетка с доступом к вершинам
-    const material = new THREE.MeshNormalMaterial( { color: 0x00ff00 } );
+    const material = new THREE.MeshBasicMaterial( {
+        alphaMap: clothTexture,
+        side: THREE.DoubleSide,
+        alphaTest: 0.1
+    } );
+    //const material = new THREE.MeshNormalMaterial( { color: 0x00ff00 } );
     mesh = new THREE.Mesh( clothGeometry, material );
     
 	mesh.position.set( 0, 0, 0 );
@@ -235,7 +236,7 @@ function addParamMesh(){
 
 }
 
-function plane( width, height ) {
+function plane_old( width, height ) {
 
     return function ( u, v, target ) {
         const x = ( u - 0.5 ) * width;
@@ -249,15 +250,33 @@ function plane( width, height ) {
 
 }
 
+function plane( width, height ) {
+
+    return function ( u, v, target ) {
+        u *=  Math.PI;
+        v *=  Math.PI;
+
+        let x = Math.cos( u ) ;
+        let y = v;
+        
+        let z = Math.sin( u );
+        
+        target.set( x, y, z ).multiplyScalar(100);       
+
+    };
+
+}
+
 function satisfyConstraints( p1, p2, distance ) {
 
-    diff.subVectors( p2.position, p1.position );
+    diff.subVectors( p2.position, p1.position ); //Дистанция между p1 и p2 (текущая)
     const currentDist = diff.length();
     if ( currentDist === 0 ) return; // prevents division by 0
-    const correction = diff.multiplyScalar( 1 - distance / currentDist );
-    const correctionHalf = correction.multiplyScalar( 0.5 );
+    const correction = diff.multiplyScalar( 1 - distance  / currentDist );
+    const correctionHalf = correction.multiplyScalar( .5);
     p1.position.add( correctionHalf );
     p2.position.sub( correctionHalf );
+    
 
 }
 
@@ -309,6 +328,7 @@ function render(){
 }
 
 function simulte(){
+
     const particles = cloth.particles;
 
     for ( let i = 0, il = particles.length; i < il; i ++ ) {
@@ -325,12 +345,12 @@ function simulte(){
     
 
 
-    for ( let i = 0; i < il; i ++ ) {
+    /*for ( let i = 0; i < il; i ++ ) {
 
         const constraint = constraints[ i ];
         satisfyConstraints( constraint[ 0 ], constraint[ 1 ], constraint[ 2 ] );
 
-    }
+    }*/
 
     for ( let i = 0, il = particles.length; i < il; i ++ ) {
 
@@ -347,23 +367,31 @@ function simulte(){
 
     }
 
+    for ( let i = 0; i < il; i ++ ) {
+
+        const constraint = constraints[ i ];
+        satisfyConstraints( constraint[ 0 ], constraint[ 1 ], constraint[ 2 ] );
+
+    }
+
     // Floor Constraints
 
     for ( let i = 0, il = particles.length; i < il; i ++ ) {
 
         const particle = particles[ i ];
         const pos = particle.position;
-        if ( pos.y < - 250 ) {
+        if ( pos.y < - 300 ) {
 
-            pos.y = - 250;
+            pos.y = - 300;
 
         }
 
     }
 
     //PIN constrain
+    console.log("PIN "+particles.length);
     for ( let i = 0, il = pins.length; i < il; i ++ ) {
-
+   
         const xy = pins[ i ];
         const p = particles[ xy ];
         p.position.copy( p.original );
