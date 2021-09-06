@@ -3,9 +3,10 @@ import { OrbitControls } from './threejs-dev/examples/jsm/controls/OrbitControls
 import { RGBELoader } from './threejs-dev/examples/jsm/loaders/RGBELoader.js';
 import { RoughnessMipmapper } from './threejs-dev/examples/jsm/utils/RoughnessMipmapper.js';
 import { ParametricGeometries } from './threejs-dev/examples/jsm/geometries/ParametricGeometries.js';
+import Stats from './threejs-dev/examples/jsm/libs/stats.module.js';
 
 //Variables
-let camera, scene,renderer, controls, clothGeometry, mesh, ball, line;
+let camera, scene,renderer, controls, clothGeometry, mesh, ball, line, stats;
 
 const MASS = 0.01;
 const restDistance = 10;
@@ -157,6 +158,7 @@ PlaceBall();
 
 addParamMesh();
 showHelpers();
+prerformMonitor();
 
 
 
@@ -180,12 +182,12 @@ function animate() {
 	requestAnimationFrame( animate );
     
     if(back) {
-        //ball.position.z -= 3.5;
+        ball.position.z -= 3.5;
     } else{
-        //ball.position.z += 3.5;
+        ball.position.z += 3.5;
     }
     
-    if(ball.position.z >= 135) {
+    if(ball.position.z >= 115) {
         back=true;
     }
     if(ball.position.z <= -40) {
@@ -196,6 +198,7 @@ function animate() {
 	
 	simulte();
     render();
+    stats.update();
     controls.update();
 	
 }
@@ -389,7 +392,7 @@ function simulte(){
     }
 
     //PIN constrain
-    console.log("PIN "+particles.length);
+  
     for ( let i = 0, il = pins.length; i < il; i ++ ) {
    
         const xy = pins[ i ];
@@ -401,6 +404,11 @@ function simulte(){
 
 
 
+}
+
+function prerformMonitor(){
+    stats = new Stats();
+	document.body.appendChild( stats.dom );
 }
 
 
